@@ -108,3 +108,5 @@ pyomeca
 thirdparty
 Misc
 .idea
+data/
+result/
