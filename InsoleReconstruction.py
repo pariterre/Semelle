@@ -127,11 +127,8 @@ dataSetAll = dataSetAll.rotate(rt.transpose())
 X_data = dataSetTripod[:, 0:nTriPod*3, :].to_2d()
 y_data = dataSetAll.to_2d()
 t = time.time()
-print(f"Prediction done in {t} seconds")
 y_recons = model.predict(X_data)
-
-print(X_data.shape)
-print(time.time() - t)
+print(f"Prediction done in {time.time() - t} seconds")
 
 # View it.
 # Convert back points matrix to Vectors3d
