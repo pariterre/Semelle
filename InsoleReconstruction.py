@@ -15,13 +15,14 @@ from pyomeca.show.vtk import VtkModel, VtkWindow
 seed = np.random.seed(42)
 
 # Configuration variables
-F_path = "/home/laboratoire/mnt/F/"
-insole_type = "soft"  # rigid
+#F_path = "/home/laboratoire/mnt/F/"
+F_path = "F:/"
+insole_type = "soft" #"soft" # rigid
 
-trainingFileName = f"{F_path}Data/Footi/Data/2018-07-30/test_validation/{insole_type}_othosis/{insole_type}_alldirections.c3d"
-reconstructFileName = f"{F_path}Data/Footi/Data/2018-07-30/test_validation/{insole_type}_othosis/{insole_type}_flexion.c3d"
-# reconstructFileName = f"{F_path}Data/Footi/Data/Healthy/2018-05-10/GaDe/Deformation_filledGaps/Walking_2.c3d"
-saveReconstructionFileName = f"result/{insole_type}_inv_eve.csv"
+trainingFileName = f"{F_path}/Data/Footi/Data/2018-07-30/test_validation/{insole_type}_orthosis/{insole_type}_alldirections.c3d"
+reconstructFileName = f"{F_path}/Data/Footi/Data/2018-07-30/test_validation/{insole_type}_orthosis/{insole_type}_static.c3d"
+#reconstructFileName = f"{F_path}/Data/Footi/Data/Healthy/2018-05-10/GaDe/Deformation_filledGaps/Walking_7.c3d"
+saveReconstructionFileName = f"result/{insole_type}_static.csv"
 model_file_path = f"result/{insole_type}.h5"
 
 name_markers = ['TriadeRightFrontF', 'TriadeRightFrontT', 'TriadeRightFrontB',
@@ -47,6 +48,8 @@ rtm = [6, 7, 8]  # idx of the markers in training file of the Tripod at the back
 show_in_global = True
 calculate_error = True
 new_marker_tripod_names = False
+show_animation = False
+show_individual_plots = True
 
 # load dataSet
 dataSet = Markers3d.from_c3d(trainingFileName, names=name_markers).low_pass(freq=100, order=4, cutoff=10)
@@ -116,6 +119,10 @@ if calculate_error:
 dataSetAll = Markers3d.from_c3d(reconstructFileName, names=markers_all).low_pass(freq=100, order=4, cutoff=10)
 dataSetTripod = Markers3d.from_c3d(reconstructFileName, names=markers_tripod).low_pass(freq=100, order=4, cutoff=10)
 
+if show_individual_plots:
+    for i in range(dataSetAll.shape[1]):
+        dataSetAll[0:3, i:i+1, :].plot()
+
 # Get markers in a known reference frame
 # rt = RotoTrans.define_axes(dataSetTripod, [rtm[2], rtm[0]], [[rtm[0], rtm[1]], [rtm[2], rtm[1]]], "xz", "z", rtm)
 rt = RotoTrans.define_axes(dataSetTripod, [0, 4*3], [[0, 5*3], [2*3+1, 2*3+1]], "xz", "z", [0, 2*3+1, 5*3])
@@ -135,18 +142,12 @@ print(f"Prediction done in {time.time() - t} seconds")
 TReal = dataSetAll  # Markers3d(X_data)
 TPred = Markers3d(y_recons)
 TPred.to_csv(saveReconstructionFileName)
+TPred.rotate(rt).to_csv(f"{saveReconstructionFileName[:-4]}_inGlobal{saveReconstructionFileName[-4:]}")
 
 # Put back the markers in global frame
 if show_in_global:
     TReal = TReal.rotate(rt)
     TPred = TPred.rotate(rt)
-
-# Create a figure
-fig = VtkWindow(background_color=(.9, .9, .9))
-
-# Add models to the figure
-h_real = VtkModel(fig, markers_color=(1, 0, 0), markers_size=5.0, markers_opacity=1)
-h_pred = VtkModel(fig, markers_color=(0, 0, 0), markers_size=10.0, markers_opacity=.5)
 
 # Calculate total error [For the paper]
 if calculate_error:
@@ -155,19 +156,27 @@ if calculate_error:
     mean_std = np.mean(np.std(error, axis=0))
     print("Mean RSME is " + str(mean_rmse) + " ± " + str(mean_std) + " mm")
 
-# Loop and show
-for i in range(TReal.shape[2]):
-    if not fig.is_active:
-        break
+if show_animation:
+    # Create a figure
+    fig = VtkWindow(background_color=(.9, .9, .9))
 
-    # Print on console where we are
-    if i % 100 == 0:
-        print(i)
+    # Add models to the figure
+    h_real = VtkModel(fig, markers_color=(1, 0, 0), markers_size=5.0, markers_opacity=1)
+    h_pred = VtkModel(fig, markers_color=(0, 0, 0), markers_size=10.0, markers_opacity=.5)
 
-    h_real.update_markers(TReal[:, :, i])
-    h_pred.update_markers(TPred[:, :, i])
-    if show_in_global:
-        h_real.update_rt(rt[:, :, i])
+    # Loop and show
+    for i in range(TReal.shape[2]):
+        if not fig.is_active:
+            break
 
-    # Update graphics
-    fig.update_frame()
+        # Print on console where we are
+        if i % 100 == 0:
+            print(i)
+
+        h_real.update_markers(TReal[:, :, i])
+        h_pred.update_markers(TPred[:, :, i])
+        if show_in_global:
+            h_real.update_rt(rt[:, :, i])
+
+        # Update graphics
+        fig.update_frame()
