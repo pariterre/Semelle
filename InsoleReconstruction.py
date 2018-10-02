@@ -15,14 +15,14 @@ from pyomeca.show.vtk import VtkModel, VtkWindow
 seed = np.random.seed(42)
 
 # Configuration variables
-#F_path = "/home/laboratoire/mnt/F/"
-F_path = "F:/"
-insole_type = "soft" #"soft" # rigid
+F_path = "/home/laboratoire/mnt/F/"
+# F_path = "F:/"
+insole_type = "rigid" #"soft" # rigid
 
 trainingFileName = f"{F_path}/Data/Footi/Data/2018-07-30/test_validation/{insole_type}_orthosis/{insole_type}_alldirections.c3d"
-reconstructFileName = f"{F_path}/Data/Footi/Data/2018-07-30/test_validation/{insole_type}_orthosis/{insole_type}_static.c3d"
+reconstructFileName = f"{F_path}/Data/Footi/Data/2018-07-30/test_validation/{insole_type}_orthosis/{insole_type}_flat.c3d"
 #reconstructFileName = f"{F_path}/Data/Footi/Data/Healthy/2018-05-10/GaDe/Deformation_filledGaps/Walking_7.c3d"
-saveReconstructionFileName = f"result/{insole_type}_static.csv"
+saveReconstructionFileName = f"result/{insole_type}_flat.csv"
 model_file_path = f"result/{insole_type}.h5"
 
 name_markers = ['TriadeRightFrontF', 'TriadeRightFrontT', 'TriadeRightFrontB',
@@ -45,10 +45,10 @@ nTriPod = 6
 nMarkOnInsole = 55
 forceRetrainingModel = False
 rtm = [6, 7, 8]  # idx of the markers in training file of the Tripod at the back of the insole [left, top, right]
-show_in_global = True
+show_in_global = False
 calculate_error = True
 new_marker_tripod_names = False
-show_animation = False
+show_animation = True
 show_individual_plots = True
 
 # load dataSet
@@ -62,7 +62,9 @@ dataSet = dataSet.rotate(rt.transpose())
 # split into input (X) and output (Y) variables
 X = dataSet[:, 0:nTriPod*3, :].to_2d()
 Y = dataSet[:, nTriPod*3:nTriPod*3 + nMarkOnInsole, :].to_2d()
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, train_size=0.8)
+# X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, train_size=0.8)
+X_train = X
+y_train = Y
 
 
 # define and train the model
